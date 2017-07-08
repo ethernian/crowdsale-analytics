@@ -10,8 +10,10 @@ const  _ = require('lodash');
 const ADVISERS_AND_FRIENDS_WALLET = "0x44f145f6bc36e51eed9b661e99c8b9ccf987c043";
 const TEAM_GROUP_WALLET = "0xa0d8f33ef9b44daae522531dd5e7252962b09207";
 const TOKEN_PER_ETH = 1000;
-const TOLERANCE = 0.0000000001;
+const TOLERANCE = 0.00000000001;
+const EXTRA_SUPPLY_TOLERANCE = 0.00001;
 const toEther = wei => web3.fromWei(wei, 'ether').toNumber();
+const diff = (a,b) => a.minus(b).absoluteValue().toNumber()
 const eth_diff = (a,b) => toEther(a.minus(b).absoluteValue())
 
 contract(' test live minter_balances', function (){
@@ -44,7 +46,7 @@ contract(' test live minter_balances', function (){
              assert.equal(toEther(sum, 'ether'), 45000000,"sum mismatch: "+sum);
         });
 
-        it('non-presale bonuses are ok ', function() {
+        it('non-presale bonuses are ok; tolerance: '+TOLERANCE, function() {
              let exp_sum = new BigNumber(0);
              //let sum = token_balances.reduce((a,b) => new BigNumber(a).plus(b)) ;
              investors.forEach((addr,i) => {
@@ -59,6 +61,15 @@ contract(' test live minter_balances', function (){
              })
              exp_sum=exp_sum.plus(teamBalance).plus(partnerBalance);
              assert.isBelow(eth_diff(exp_sum,totalSupply),TOLERANCE,'mismatch totalSupply> ');
+        });
+
+        it('team balance should make 18% of totalSupply; tolerance: '+EXTRA_SUPPLY_TOLERANCE, function(){
+          assert.isBelow(diff(teamBalance.div(totalSupply),0.18),EXTRA_SUPPLY_TOLERANCE,' team balance ratio mismatch')
+        });
+
+
+        it('partner balance should make 10% of totalSupply; tolerance:'+EXTRA_SUPPLY_TOLERANCE, function(){
+          assert.isBelow(diff(partnerBalance.div(totalSupply),0.10),EXTRA_SUPPLY_TOLERANCE,' team balance ratio mismatch')
         });
 
         function promiseTokenData(){
